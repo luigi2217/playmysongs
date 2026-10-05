@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enviar m&uacute;sica - PlayMySongs</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <h1>Enviar m&uacute;sica</h1>
+    <p class="sub">Preencha os dados e escolha um arquivo .mp3 ou .ogg</p>
+
+    <div class="card">
+        <form id="form">
+            <label for="estilo">Estilo</label>
+            <select id="estilo" required>
+                <option value="">Carregando estilos...</option>
+            </select>
+
+            <label for="nome">Nome da m&uacute;sica</label>
+            <input type="text" id="nome" placeholder="Ex.: Love My Life" required>
+
+            <label for="artista">Artista</label>
+            <input type="text" id="artista" placeholder="Ex.: Robbie Williams" required>
+
+            <label for="arquivo">Arquivo (mp3 ou ogg)</label>
+            <input type="file" id="arquivo" accept=".mp3,.ogg" required>
+
+            <button type="submit">Enviar</button>
+        </form>
+
+        <div id="msg" class="msg"></div>
+        <div id="player"></div>
+    </div>
+
+    <a class="voltar" href="index.html">&#8592; Voltar</a>
+
+    <script>
+        const API = "http://localhost:8080/apis";
+        const UPLOADS = "http://localhost:8080/uploads/";
+
+        const selEstilo = document.getElementById("estilo");
+        const msg = document.getElementById("msg");
+        const player = document.getElementById("player");
+
+        window.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const resp = await fetch(API + "/get-music-styles");
+                const estilos = await resp.json();
+                selEstilo.innerHTML = '<option value="">Selecione um estilo</option>';
+                estilos.forEach(e => {
+                    const opt = document.createElement("option");
+                    opt.value = e.nome;
+                    opt.textContent = e.nome;
+                    selEstilo.appendChild(opt);
+                });
+            } catch (err) {
+                selEstilo.innerHTML = '<option value="">Erro ao carregar estilos</option>';
+            }
+        });
+
+        document.getElementById("form").addEventListener("submit", async (ev) => {
+            ev.preventDefault();
+            msg.className = "msg";
+            player.innerHTML = "";
+
+            const arquivo = document.getElementById("arquivo").files[0];
+
+            const nomeArq = arquivo.name.toLowerCase();
+            if (!nomeArq.endsWith(".mp3") && !nomeArq.endsWith(".ogg")) {
+                mostrar("erro", "Formato invalido! Envie apenas .mp3 ou .ogg.");
+                return;
+            }
+
+            const dados = new FormData();
+            dados.append("arquivo", arquivo);
+            dados.append("nome", document.getElementById("nome").value);
+            dados.append("estilo", selEstilo.value);
+            dados.append("artista", document.getElementById("artista").value);
+
+            try {
+                const resp = await fetch(API + "/music-upload", { method: "POST", body: dados });
+                const data = await resp.json();
+                if (!resp.ok) {
+                    mostrar("erro", data.mensagem || "Erro ao enviar a musica.");
+                    return;
+                }
+                mostrar("ok", "Musica enviada com sucesso! Arquivo: " + data.arquivo);
+                player.innerHTML =
+                    '<audio controls><source src="' + UPLOADS + data.arquivo + '" type="audio/mpeg"></audio>';
+                ev.target.reset();
+            } catch (err) {
+                mostrar("erro", "Nao foi possivel conectar ao servidor. O backend esta rodando?");
+            }
+        });
+
+        function mostrar(tipo, texto) {
+            msg.className = "msg " + tipo;
+            msg.textContent = texto;
+        }
+    </script>
+</body>
+</html>

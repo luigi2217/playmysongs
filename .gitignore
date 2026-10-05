@@ -1,0 +1,14 @@
+# Maven
+target/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Musicas enviadas pelo upload (nao versionar)
+playmysongsBack/src/main/resources/static/uploads/*
+!playmysongsBack/src/main/resources/static/uploads/.gitkeep
+
+# Sistema
+.DS_Store
+Thumbs.db

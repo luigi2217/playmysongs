@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar m&uacute;sicas - PlayMySongs</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <h1>Buscar m&uacute;sicas</h1>
+    <p class="sub">Digite parte do nome, estilo ou artista</p>
+
+    <div class="card">
+        <form id="form">
+            <label for="chave">Palavra-chave</label>
+            <input type="text" id="chave" placeholder="Ex.: rock, robbie, love..." required>
+            <button type="submit">Buscar</button>
+        </form>
+        <div id="msg" class="msg"></div>
+    </div>
+
+    <div id="resultados"></div>
+
+    <a class="voltar" href="index.html">&#8592; Voltar</a>
+
+    <script>
+        const API = "http://localhost:8080/apis";
+        const UPLOADS = "http://localhost:8080/uploads/";
+
+        const msg = document.getElementById("msg");
+        const resultados = document.getElementById("resultados");
+
+        document.getElementById("form").addEventListener("submit", async (ev) => {
+            ev.preventDefault();
+            msg.className = "msg";
+            resultados.innerHTML = "";
+
+            const chave = document.getElementById("chave").value;
+
+            try {
+                const resp = await fetch(API + "/find-musics?chave=" + encodeURIComponent(chave));
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    mostrar("erro", data.mensagem || "Nenhuma musica encontrada.");
+                    return;
+                }
+
+                data.forEach(m => {
+                    const div = document.createElement("div");
+                    div.className = "musica";
+                    div.innerHTML =
+                        '<div class="titulo">' + m.nome + '</div>' +
+                        '<div class="meta">' + m.estilo + ' &middot; ' + m.artista + '</div>' +
+                        '<audio controls><source src="' + UPLOADS + m.arquivo + '" type="audio/mpeg"></audio>';
+                    resultados.appendChild(div);
+                });
+            } catch (err) {
+                mostrar("erro", "Nao foi possivel conectar ao servidor. O backend esta rodando?");
+            }
+        });
+
+        function mostrar(tipo, texto) {
+            msg.className = "msg " + tipo;
+            msg.textContent = texto;
+        }
+    </script>
+</body>
+</html>
